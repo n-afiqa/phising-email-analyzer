@@ -1,0 +1,7 @@
+beautifulsoup4
+requests
+dnspython
+jinja2
+python-dotenv
+pytest
+ruff

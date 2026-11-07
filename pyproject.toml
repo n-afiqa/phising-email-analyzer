@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phishing-email-analyzer"
+version = "1.1.0"
+description = "Phishing email analyzer with optional VirusTotal and DNS enrichment"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4",
+    "requests",
+    "dnspython",
+    "jinja2",
+    "python-dotenv",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

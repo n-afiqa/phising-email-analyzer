@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Email Analysis Report — {{ filename }}</title>
+  <style>
+    :root {
+      --bg: #070708;
+      --panel: #111113;
+      --panel-2: #17171a;
+      --border: #2a2a2e;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --low: #4ade80;
+      --medium: #fbbf24;
+      --high: #fb923c;
+      --critical: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: radial-gradient(circle at top, #16161a, var(--bg) 40%);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 880px;
+      margin: 32px auto 64px;
+      padding: 28px 32px 40px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+    .kicker {
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    h1 { margin: 6px 0 8px; font-size: 32px; font-weight: 700; }
+    .meta, .note, .muted { color: var(--muted); font-size: 14px; }
+    hr { border: 0; border-top: 1px solid var(--border); margin: 22px 0; }
+    h2 { font-size: 18px; margin: 0 0 12px; }
+    ul { margin: 0; padding-left: 20px; }
+    li { margin: 6px 0; }
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .score { font-size: 28px; font-weight: 700; }
+    .badge {
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid currentColor;
+      white-space: nowrap;
+    }
+    .Low { color: var(--low); }
+    .Medium { color: var(--medium); }
+    .High { color: var(--high); }
+    .Critical { color: var(--critical); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      text-align: left;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; font-size: 14px; }
+    .result-Fail, .result-Softfail, .result-Permerror { color: var(--critical); font-weight: 700; }
+    .result-Pass { color: var(--low); font-weight: 700; }
+    .result-Unavailable, .result-None, .result-Neutral { color: var(--muted); }
+    .url-card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 10px 0;
+    }
+    .url-card code { color: #e4e4e7; word-break: break-all; }
+    .flag { color: var(--high); font-size: 13px; font-weight: 600; }
+    .ok { color: var(--muted); font-size: 13px; }
+    .footer { margin-top: 28px; font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <article class="wrap">
+    <div class="kicker">Phishing email analyzer</div>
+    <h1>Email Analysis Report</h1>
+    <p class="meta">{{ filename }} · {{ analyzed_at }} · Analyzer version {{ version }}</p>
+    <hr>
+    <div class="score-row">
+      <div>
+        <div class="score {{ risk.category }}">Risk score: {{ risk.score }} / 100</div>
+        <p class="note">Analyzer {{ version }} — local analysis{% if reputation.enabled %} with online enrichment enabled{% else %}; online checks are disabled{% endif %}</p>
+      </div>
+      <div class="badge {{ risk.category }}">{{ risk.category }} risk</div>
+    </div>
+    <hr>
+    <section>
+      <h2>Email details</h2>
+      <ul>
+        <li><strong>From:</strong> {{ parsed.from_header or "Not present" }}</li>
+        <li><strong>To:</strong> {{ parsed.to_header or "Not present" }}</li>
+        <li><strong>Subject:</strong> {{ parsed.subject or "Not present" }}</li>
+        <li><strong>Date:</strong> {{ parsed.date_header or "Not present" }}</li>
+        <li><strong>Reply-To:</strong> {{ parsed.reply_to or "Not present" }}</li>
+        <li><strong>Return-Path:</strong> {{ parsed.return_path or "Not present" }}</li>
+      </ul>
+      {% if relevant_headers %}
+      <p class="muted" style="margin-top:16px;">Relevant headers</p>
+      <table>
+        <thead><tr><th>Header</th><th>Value</th></tr></thead>
+        <tbody>
+        {% for name, value in relevant_headers %}
+          <tr><td>{{ name }}</td><td>{{ value }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </section>
+    <hr>
+    <section>
+      <h2>Authentication results</h2>
+      <table>
+        <thead><tr><th>Check</th><th>Result</th></tr></thead>
+        <tbody>
+        {% for check in auth_checks %}
+          <tr>
+            <td>{{ check.name }}</td>
+            <td class="result-{{ check.result }}">{{ check.result }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="note">Authentication results are taken from the email headers. DNS policy records, when enabled, are shown separately below. Missing checks do not add points.</p>
+    </section>
+    <hr>
+    {% if reputation.enabled %}
+    <section>
+      <h2>Current DNS authentication records</h2>
+      {% if reputation.dns_checks %}
+      <table>
+        <thead><tr><th>Check</th><th>DNS name</th><th>Status / TXT record</th></tr></thead>
+        <tbody>
+        {% for check in reputation.dns_checks %}
+          <tr>
+            <td>{{ check.name }}</td>
+            <td><code>{{ check.target or "n/a" }}</code></td>
+            <td>{{ check.status }}{% for record in check.records %}<br><code>{{ record }}</code>{% endfor %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      <p class="note">DNS records reflect current policy and are not a cryptographic re-validation of this message.</p>
+    </section>
+    <hr>
+    <section>
+      <h2>VirusTotal reputation</h2>
+      {% if reputation.vt_checks %}
+      <table>
+        <thead><tr><th>Type / target</th><th>Status</th><th>Malicious</th><th>Suspicious</th></tr></thead>
+        <tbody>
+        {% for check in reputation.vt_checks %}
+          <tr>
+            <td>{{ check.type }}<br><code>{{ check.target }}</code></td>
+            <td>{{ check.status }}</td>
+            <td>{{ check.malicious }}</td>
+            <td>{{ check.suspicious }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted">No VirusTotal reports were retrieved.</p>
+      {% endif %}
+      <p class="note">Existing VirusTotal reports only are queried; URLs are not submitted for scanning.</p>
+    </section>
+    <hr>
+    {% endif %}
+    <section>
+      <h2>URL findings</h2>
+      {% if url_records %}
+        {% for url in url_records %}
+          <div class="url-card">
+            <div><strong>Displayed text:</strong> {{ url.display_text or "(empty)" }}</div>
+            <div><strong>Destination:</strong> <code>{{ url.href }}</code></div>
+            <div><strong>Hostname:</strong> {{ url.hostname or "n/a" }}</div>
+            {% if url.mismatch or url.patterns %}
+              <p class="flag">{{ url.explanation }}</p>
+            {% else %}
+              <p class="ok">{{ url.explanation }}</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="muted">No URLs were found in the message body.</p>
+      {% endif %}
+    </section>
+    <hr>
+    <section>
+      <h2>Final assessment</h2>
+      <ul>
+        <li>Overall score <strong>{{ risk.score }} / 100</strong> — <strong class="{{ risk.category }}">{{ risk.category }}</strong></li>
+        {% if findings %}
+          {% for finding in findings %}
+            <li>+{{ finding.points }} {{ finding.title }} — {{ finding.evidence }} <span class="muted">(source: {{ finding.source }})</span></li>
+          {% endfor %}
+        {% else %}
+          <li>No scoring findings were recorded from local analysis.</li>
+        {% endif %}
+      </ul>
+      <p class="muted" style="margin-top:16px;">Unavailable checks and analysis limitations</p>
+      <ul>
+        {% for note in limitations %}
+          <li>{{ note }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    <p class="footer">Generated by phishing-email-analyzer {{ version }}. This report is decision support, not a verdict.</p>
+  </article>
+</body>
+</html>

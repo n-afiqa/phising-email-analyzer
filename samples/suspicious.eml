@@ -1,0 +1,31 @@
+MIME-Version: 1.0
+Date: Mon, 19 Oct 2026 11:00:00 +0000
+From: "PayPal Security" <support@paypa1-secure.xyz>
+To: victim@example.org
+Subject: Urgent: confirm your account
+Message-ID: <phish@paypa1-secure.xyz>
+Reply-To: helpdesk@accounts-reset.top
+Return-Path: <bounce@accounts-reset.top>
+Authentication-Results: mx.example.org;
+	dkim=fail header.d=paypa1-secure.xyz;
+	spf=fail smtp.mailfrom=paypa1-secure.xyz;
+	dmarc=fail header.from=paypa1-secure.xyz
+Received-SPF: fail (example.org: domain of support@paypa1-secure.xyz does not designate 203.0.113.50 as permitted sender)
+Content-Type: multipart/alternative; boundary="bound42"
+
+--bound42
+Content-Type: text/plain; charset="utf-8"
+
+Visit https://paypal.com/login immediately.
+
+--bound42
+Content-Type: text/html; charset="utf-8"
+
+<html>
+  <body>
+    <p>Your account will be closed.</p>
+    <p><a href="http://203.0.113.50/login">https://paypal.com/login</a></p>
+    <p><a href="http://bit.ly/abused-link">PayPal Login</a></p>
+  </body>
+</html>
+--bound42--
