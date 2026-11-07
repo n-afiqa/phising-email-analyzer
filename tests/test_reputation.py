@@ -124,6 +124,53 @@ def test_virustotal_uses_existing_reports_and_scores_malicious_results(
     assert all(url.startswith("https://www.virustotal.com/api/v3/") for url, _, _ in requests_made)
 
 
+def test_virustotal_extracts_domains_from_url_hosts_not_substrings(
+    monkeypatch, incomplete_email
+):
+    parsed = parse_eml(incomplete_email)
+    parsed.from_header = ""
+    parsed.urls = [
+        ExtractedUrl(
+            "https://evil-example.net/example.org?next=example.org",
+            "example.org",
+            "text_body",
+        ),
+        ExtractedUrl(
+            "https://benign-looking-prefix-example.org/path",
+            "example.org",
+            "text_body",
+        ),
+        ExtractedUrl(
+            "https://sub.example.org/path",
+            "sub.example.org",
+            "text_body",
+        ),
+    ]
+    monkeypatch.setattr("phishing_analyzer.reputation.check_dns_records", lambda _parsed: [])
+    domain_targets = []
+
+    def lookup(endpoint, identifier, _api_key):
+        if endpoint == "domains":
+            domain_targets.append(identifier)
+        return {
+            "status": "No existing VirusTotal report",
+            "malicious": 0,
+            "suspicious": 0,
+            "harmless": 0,
+            "undetected": 0,
+        }
+
+    monkeypatch.setattr("phishing_analyzer.reputation._vt_lookup", lookup)
+
+    check_reputation(parsed, enabled=True, api_key="test-key")
+
+    assert domain_targets == [
+        "benign-looking-prefix-example.org",
+        "evil-example.net",
+        "sub.example.org",
+    ]
+
+
 def test_cli_loads_virustotal_key_from_dotenv_and_uses_it(monkeypatch, tmp_path):
     key = "dotenv-test-key"
     (tmp_path / ".env").write_text(
