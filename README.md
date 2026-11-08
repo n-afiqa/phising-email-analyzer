@@ -69,6 +69,12 @@ directory paths:
 python -m phishing_analyzer "C:\Users\YourName\Downloads\suspicious.eml" -o "C:\Users\YourName\Documents\Phishing Reports.html"
 ```
 
+### Sample Report
+
+![Example phishing analysis report](reports/sample-report/image.png)
+
+![Suspicious email sample report](reports/suspicious.html)
+
 ## More information
 
 - [Risk score](docs/risk-scoring.md): scoring criteria and categories.
