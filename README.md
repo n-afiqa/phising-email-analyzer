@@ -9,7 +9,7 @@ Phishing Email Analyzer is a Python-based tool for analyzing `.eml` files, exami
 
 ## Architecture
 
-![Phishing Email Analyzer architecture](architecture.png)
+![Phishing Email Analyzer architecture](screenshots/architecture.png)
 
 ## Features
 
@@ -71,9 +71,7 @@ python -m phishing_analyzer "C:\Users\YourName\Downloads\suspicious.eml" -o "C:\
 
 ### Sample Report
 
-![Example phishing analysis report](reports/sample-report/image.png)
-
-![Suspicious email sample report](reports/suspicious.html)
+![Example phishing analysis report](screenshots/sample-report.png)
 
 ## More information
 
